@@ -17,7 +17,6 @@
 }
 
 .sub {
-  /* раньше была opacity — убираем */
   color: var(--text-secondary, #b6bac3);
   font-size: 14px;
   margin: 0;
@@ -87,7 +86,6 @@
 }
 
 .copy {
-  /* основная копия — без opacity */
   margin: 0 0 4px;
   color: var(--fee-text);
   line-height: 1.55;
@@ -104,7 +102,6 @@
 }
 
 .small {
-  /* раньше было opacity — задаём явный цвет */
   color: var(--fee-muted);
   font-size: 12px;
   margin-top: 10px;

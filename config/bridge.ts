@@ -21,6 +21,9 @@ export const STAKING_POOLS_IDS: readonly string[] = [
   '12d3koown4b9xwozulkgzct4xmclmwtnhju94xf9janfouescwhj'
 ];
 
+// referral code в deBridge
+export const REFERRAL_CODE = 32608;
+
 // EVM RPC
 export const ZIL_EVM_RPC = 'https://ssn.zilpay.io/api' as const;
 
@@ -35,9 +38,6 @@ export const ELIGIBILITY_POOLS = [
     proxy: '0xCDb0B23Db1439b28689844FD093C478d73C0786A',
   },
 ] as const;
-
-// referral code в deBridge
-export const REFERRAL_CODE = 32608;
 
 // ---- chainId для используемых сетей ----
 export const CHAIN = {
@@ -60,7 +60,7 @@ export const SUPPORTED_CHAINS_MIN = {
     8453: 'all',     // Base
     59144: 'all',    // Linea
     80094: 'all',    // Hyperliquid (если видишь в списке)
-    32769: 'all',    // ✅ Zilliqa EVM
+    32769: 'all',    // Zilliqa EVM
   },
   outputChains: {
     1: 'all',
@@ -72,7 +72,7 @@ export const SUPPORTED_CHAINS_MIN = {
     8453: 'all',
     59144: 'all',
     80094: 'all',
-    32769: 'all',    // ✅ Zilliqa EVM
+    32769: 'all',    // Zilliqa EVM
   },
 } as const;
 
@@ -85,15 +85,15 @@ export const WIDGET_DEFAULTS = {
   width: '100%',
   height: 780,
 
-  // ✅ ZIL дефолтом на выходе
+  // ZIL дефолтом на выходе
   outputChain: 32769,
 
-  // ✅ Явно разрешаем ZIL + текущие дефолтные сети
+  // Явно разрешаем ZIL + текущие дефолтные сети
   supportedChains: SUPPORTED_CHAINS_MIN,
 } as const;
 
 export const ZQ2 = {
-  RPC: process.env.NEXT_PUBLIC_ZQ2_RPC ?? 'https://ssn.zilpay.io/api',
+  RPC: 'https://ssn.zilpay.io/api',
   CHAIN_ID: 32769, // Zilliqa EVM
   POOLS: {
     AMAZING: {
@@ -107,6 +107,4 @@ export const ZQ2 = {
       proxy: '0xCDb0B23Db1439b28689844FD093C478d73C0786A', // delegation proxy
     },
   },
-  // если позже будем юзать REST API аггрегатора:
-  API_BASE: process.env.NEXT_PUBLIC_ZQ2_API_BASE ?? 'https://ssn.zilpay.io/api',
 } as const;
