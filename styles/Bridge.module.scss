@@ -1,0 +1,135 @@
+/* styles/Bridge.module.scss */
+.container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 16px;
+}
+
+.header {
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.sub {
+  /* раньше была opacity — убираем */
+  color: var(--text-secondary, #b6bac3);
+  font-size: 14px;
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.widgetWrap {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.feeCard {
+  position: sticky;
+  top: 16px;
+  height: fit-content;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 16px 18px;
+
+  /* локальные токены с фолбэками под тёмную тему ZilPay */
+  --fee-text: var(--text-primary, #e7e9ee);
+  --fee-muted: var(--text-secondary, #b6bac3);
+  --fee-strong: var(--text-strong, #ffffff);
+  color: var(--fee-text);
+}
+
+.feeTitle {
+  margin: 0 0 12px;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--fee-strong);
+}
+
+.feeDef {
+  margin: 0 0 10px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 8px 16px;
+  align-items: start;
+  padding: 8px 0;
+}
+
+.row dt {
+  font-weight: 700;
+  color: var(--fee-strong);
+}
+
+.row dd {
+  margin: 0;
+}
+
+.copy {
+  /* основная копия — без opacity */
+  margin: 0 0 4px;
+  color: var(--fee-text);
+  line-height: 1.55;
+}
+
+.copyMuted {
+  margin: 0;
+  color: var(--fee-muted);
+  line-height: 1.55;
+}
+
+.row dd strong {
+  color: var(--fee-strong);
+}
+
+.small {
+  /* раньше было opacity — задаём явный цвет */
+  color: var(--fee-muted);
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+.yourFee {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.yourFeeTitle {
+  font-size: 13px;
+  color: var(--fee-muted, #b6bac3);
+}
+
+.badge {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 10px;
+  line-height: 1;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  color: var(--fee-strong, #ffffff);
+}

@@ -54,6 +54,11 @@ export const NavBar: React.FC = () => {
             POOL
           </h3>
         </Link>
+        <Link href="/bridge" passHref>
+          <h3>
+            BRIDGE
+          </h3>
+        </Link>
       </div>
       <div className={styles.buttons}>
         <ConnectZIlPay />
