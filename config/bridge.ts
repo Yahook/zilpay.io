@@ -90,7 +90,11 @@ export const WIDGET_DEFAULTS = {
 
   // Явно разрешаем ZIL + текущие дефолтные сети
   supportedChains: SUPPORTED_CHAINS_MIN,
-} as const;
+
+  // Affiliate fee - дефолтная комиссия
+  affiliateFeePercent: AFFILIATE_DEFAULT_PERCENT,
+  affiliateFeeRecipient: AFFILIATE_EVM_RECIPIENT,
+};
 
 export const ZQ2 = {
   RPC: 'https://ssn.zilpay.io/api',

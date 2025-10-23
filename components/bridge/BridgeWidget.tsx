@@ -89,8 +89,21 @@ export function BridgeWidget({ className, onAffiliateFeeChange }: BridgeWidgetPr
     return null;
   }, [wallet, connectedWallet]);
 
-  const checkAndSetFee = useCallback(async (widget: DeBridgeWidget, userAddress: `0x${string}` | null) => {
+  const checkAndSetFee = useCallback(async (widget: DeBridgeWidget, userAddress: `0x${string}` | null, resetToDefault = false) => {
     let finalPercent = AFFILIATE_DEFAULT_PERCENT;
+
+    // If explicitly resetting to default (e.g., wallet switched)
+    if (resetToDefault && !userAddress) {
+      widget.setAffiliateFee({
+        evm: {
+          affiliateFeePercent: String(AFFILIATE_DEFAULT_PERCENT),
+          affiliateFeeRecipient: AFFILIATE_EVM_RECIPIENT,
+        },
+      });
+      console.debug('[BridgeWidget] reset to default', AFFILIATE_DEFAULT_PERCENT);
+      onAffiliateFeeChange?.(finalPercent);
+      return;
+    }
 
     if (userAddress) {
       try {
@@ -107,16 +120,18 @@ export function BridgeWidget({ className, onAffiliateFeeChange }: BridgeWidgetPr
           });
           console.debug(`[BridgeWidget] eligible (≈ ${total.toFixed(2)} ZIL) → set 0%`);
         } else {
+          // Not eligible, reset to default explicitly
           widget.setAffiliateFee({
             evm: {
               affiliateFeePercent: String(AFFILIATE_DEFAULT_PERCENT),
               affiliateFeeRecipient: AFFILIATE_EVM_RECIPIENT,
             },
           });
-          console.debug(`[BridgeWidget] not eligible (≈ ${total.toFixed(2)} ZIL) → keep ${AFFILIATE_DEFAULT_PERCENT}%`);
+          console.debug(`[BridgeWidget] not eligible (≈ ${total.toFixed(2)} ZIL) → set ${AFFILIATE_DEFAULT_PERCENT}%`);
         }
       } catch (err) {
         console.warn('[BridgeWidget] eligibility check failed:', err);
+        // On error, set default explicitly
         widget.setAffiliateFee({
           evm: {
             affiliateFeePercent: String(AFFILIATE_DEFAULT_PERCENT),
@@ -125,14 +140,7 @@ export function BridgeWidget({ className, onAffiliateFeeChange }: BridgeWidgetPr
         });
       }
     } else {
-      // No wallet connected - use default
-      widget.setAffiliateFee({
-        evm: {
-          affiliateFeePercent: String(AFFILIATE_DEFAULT_PERCENT),
-          affiliateFeeRecipient: AFFILIATE_EVM_RECIPIENT,
-        },
-      });
-      console.debug('[BridgeWidget] no wallet connected → keep default', AFFILIATE_DEFAULT_PERCENT);
+      console.debug('[BridgeWidget] no wallet connected → default', AFFILIATE_DEFAULT_PERCENT);
     }
 
     // Notify parent component
@@ -171,8 +179,14 @@ export function BridgeWidget({ className, onAffiliateFeeChange }: BridgeWidgetPr
         return;
       }
 
+      const userAddress = getUserAddress();
+      
       const params: Record<string, unknown> = { ...WIDGET_DEFAULTS };
       if (REFERRAL_CODE) params.r = String(REFERRAL_CODE);
+
+      // Set affiliate fee in initial params (required for it to work)
+      params.affiliateFeePercent = AFFILIATE_DEFAULT_PERCENT;
+      params.affiliateFeeRecipient = AFFILIATE_EVM_RECIPIENT;
 
       console.debug('[BridgeWidget] init widget with params:', params);
       const widget = await window.deBridge.widget(params);
@@ -185,10 +199,9 @@ export function BridgeWidget({ className, onAffiliateFeeChange }: BridgeWidgetPr
       window.__ZP_DEBRIDGE_INIT__ = true;
       initializedRef.current = true;
 
-      // Check fee based on current wallet
-      const userAddress = getUserAddress();
+      // Check fee based on current wallet and update if needed
       lastAddressRef.current = userAddress;
-      await checkAndSetFee(widget, userAddress);
+      await checkAndSetFee(widget, userAddress, false);
 
       widget.on('order', () => {});
       widget.on('bridge', () => {});
@@ -202,15 +215,30 @@ export function BridgeWidget({ className, onAffiliateFeeChange }: BridgeWidgetPr
     };
   }, [getUserAddress, checkAndSetFee]);
 
-  // Watch for wallet changes and update fee
+  // Watch for wallet changes and update fee (or reload widget on disconnect)
   useEffect(() => {
     const currentAddress = getUserAddress();
     
     // Only update if address actually changed
-    if (currentAddress !== lastAddressRef.current && widgetRef.current && initializedRef.current) {
-      console.debug('[BridgeWidget] wallet changed, updating fee:', lastAddressRef.current, '→', currentAddress);
-      lastAddressRef.current = currentAddress;
-      checkAndSetFee(widgetRef.current, currentAddress);
+    if (currentAddress !== lastAddressRef.current && initializedRef.current) {
+      const wasConnected = lastAddressRef.current !== null;
+      const isConnected = currentAddress !== null;
+      
+      console.debug('[BridgeWidget] wallet changed:', lastAddressRef.current, '→', currentAddress);
+      
+      // If wallet was disconnected, reload the widget (will be handled by page reload from AccountModal)
+      if (wasConnected && !isConnected) {
+        console.debug('[BridgeWidget] wallet disconnected, page reload will reinit widget');
+        lastAddressRef.current = null;
+        // Reset to default before page reload (just in case)
+        if (widgetRef.current) {
+          checkAndSetFee(widgetRef.current, null, true);
+        }
+      } else if (widgetRef.current) {
+        // Just update fee for connected wallet changes
+        lastAddressRef.current = currentAddress;
+        checkAndSetFee(widgetRef.current, currentAddress, false);
+      }
     }
   }, [wallet, connectedWallet, getUserAddress, checkAndSetFee]);
 
