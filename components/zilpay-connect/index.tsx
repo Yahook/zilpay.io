@@ -6,9 +6,11 @@ import React from "react";
 import { useStore } from 'react-stores';
 
 import { AccountModal } from '@/components/modals/account/index';
+import { WalletSelectorModal, WalletOption } from '@/components/modals/wallet-selector/index';
 import { ThreeDots } from 'react-loader-spinner';
 
 import { $wallet } from '@/store/wallet';
+import { $connectedWallet, resetConnectedWallet } from '@/store/connected-wallet';
 import { $transactions, updateTransactions } from '@/store/transactions';
 import { $net } from '@/store/netwrok';
 
@@ -16,6 +18,7 @@ import { Blockchain } from '@/mixins/custom-fetch';
 import { ZilPayBase } from '@/mixins/zilpay-base';
 import { trim } from '@/lib/trim';
 import { DragonDex } from '@/mixins/dex';
+import { discoverProvidersOnce, EIP6963ProviderDetail } from '@/lib/eip6963';
 
 const chainFetcher = new Blockchain();
 const zilPayWallet = new ZilPayBase();
@@ -24,12 +27,17 @@ const dex = new DragonDex();
 let observer: any = null;
 let observerNet: any = null;
 let observerBlock: any = null;
+
 export const ConnectZIlPay: React.FC = function () {
   const wallet = useStore($wallet);
+  const connectedWallet = useStore($connectedWallet);
   const transactionsStore = useStore($transactions);
 
   const [accountModal, setAccountModal] = React.useState(false);
+  const [walletSelectorModal, setWalletSelectorModal] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
+  const [discoveringWallets, setDiscoveringWallets] = React.useState(false);
+  const [availableWallets, setAvailableWallets] = React.useState<WalletOption[]>([]);
 
   const isLoading = React.useMemo(() => {
     const { transactions } = transactionsStore;
@@ -141,15 +149,22 @@ export const ConnectZIlPay: React.FC = function () {
     [],
   );
 
-  const handleConnect = async() => {
-    setLoading(true);
-
+  const handleConnectZilPay = async() => {
     try {
       const zp = await zilPayWallet.zilpay();
       const connected = await zp.wallet.connect();
 
       if (connected && zp.wallet.defaultAccount) {
         $wallet.setState(zp.wallet.defaultAccount);
+        $connectedWallet.setState({
+          type: 'zilpay',
+          address: zp.wallet.defaultAccount.base16
+        });
+        
+        // Save wallet type to localStorage and clear disconnected flag
+        window.localStorage.setItem('wallet_type', 'zilpay');
+        window.localStorage.removeItem('evm_address');
+        window.localStorage.removeItem('wallet_disconnected');
       }
 
       $net.setState({
@@ -164,22 +179,211 @@ export const ConnectZIlPay: React.FC = function () {
         $transactions.setState(JSON.parse(cache));
       }
     } catch (err) {
-      console.warn(err);
+      console.warn('Failed to connect ZilPay:', err);
+      throw err;
+    }
+  };
+
+  const handleConnectEVM = async(detail: EIP6963ProviderDetail) => {
+    try {
+      const accounts = await detail.provider.request({
+        method: 'eth_requestAccounts',
+      }) as string[];
+
+      if (accounts && accounts.length > 0) {
+        const address = accounts[0];
+        
+        $connectedWallet.setState({
+          type: 'evm',
+          provider: detail.provider,
+          address: address
+        });
+        
+        // Save to localStorage and clear disconnected flag
+        window.localStorage.setItem('wallet_type', 'evm');
+        window.localStorage.setItem('evm_address', address);
+        window.localStorage.removeItem('wallet_disconnected');
+
+        // Listen to account changes
+        if (detail.provider.on) {
+          detail.provider.on('accountsChanged', (newAccounts: string[]) => {
+            if (newAccounts && newAccounts.length > 0) {
+              window.localStorage.setItem('evm_address', newAccounts[0]);
+              $connectedWallet.setState({
+                type: 'evm',
+                provider: detail.provider,
+                address: newAccounts[0]
+              });
+            } else {
+              // Disconnected
+              window.localStorage.removeItem('wallet_type');
+              window.localStorage.removeItem('evm_address');
+              resetConnectedWallet();
+            }
+          });
+
+          detail.provider.on('chainChanged', () => {
+            // Reload to handle chain change
+            window.location.reload();
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to connect EVM wallet:', err);
+      throw err;
+    }
+  };
+
+  const discoverWallets = async() => {
+    setDiscoveringWallets(true);
+    const wallets: WalletOption[] = [];
+
+    // Check for ZilPay
+    try {
+      const zp = await zilPayWallet.zilpay();
+      if (zp) {
+        wallets.push({
+          id: 'zilpay-legacy',
+          name: 'ZilPay Extension',
+          icon: '/icons/zilpay.svg',
+          type: 'zilpay',
+        });
+      }
+    } catch (err) {
+      // ZilPay not available
+    }
+
+    // Discover EIP-6963 providers
+    try {
+      const evmProviders = await discoverProvidersOnce(500);
+      evmProviders.forEach((detail) => {
+        wallets.push({
+          id: detail.info.uuid,
+          name: detail.info.name,
+          icon: detail.info.icon,
+          type: 'evm',
+          detail: detail,
+        });
+      });
+    } catch (err) {
+      console.warn('Failed to discover EVM wallets:', err);
+    }
+
+    setAvailableWallets(wallets);
+    setDiscoveringWallets(false);
+  };
+
+  const handleConnect = async() => {
+    setLoading(true);
+    await discoverWallets();
+    setWalletSelectorModal(true);
+    setLoading(false);
+  };
+
+  const handleWalletSelect = async(walletOption: WalletOption) => {
+    setLoading(true);
+    
+    try {
+      if (walletOption.type === 'zilpay') {
+        await handleConnectZilPay();
+      } else if (walletOption.type === 'evm' && walletOption.detail) {
+        await handleConnectEVM(walletOption.detail);
+      }
+    } catch (err) {
+      console.error('Failed to connect wallet:', err);
     }
 
     setLoading(false);
   };
 
+  const getDisplayAddress = (): string => {
+    if (connectedWallet?.type === 'evm' && connectedWallet.address) {
+      return trim(connectedWallet.address) || '';
+    }
+    if (wallet?.bech32) {
+      return trim(wallet.bech32) || '';
+    }
+    return '';
+  };
+
   React.useEffect(() => {
-    zilPayWallet
-      .zilpay()
-      .then((zp) => {
-        hanldeObserverState(zp);
+    // Try to restore EVM wallet session from localStorage
+    const tryRestoreEVMSession = async () => {
+      const isDisconnected = window.localStorage.getItem('wallet_disconnected');
+      
+      // If user manually disconnected, don't auto-restore
+      if (isDisconnected === 'true') {
         setLoading(false);
-      })
-      .catch((err) => {
-        setLoading(false);
-      });
+        return;
+      }
+      
+      const savedWalletType = window.localStorage.getItem('wallet_type');
+      
+      if (savedWalletType === 'evm') {
+        const savedAddress = window.localStorage.getItem('evm_address');
+        if (savedAddress) {
+          setLoading(true);
+          const evmProviders = await discoverProvidersOnce(500);
+          
+          // Try to find the previously connected provider
+          for (const detail of evmProviders) {
+            try {
+              const accounts = await detail.provider.request({
+                method: 'eth_accounts',
+              }) as string[];
+              
+              if (accounts && accounts.length > 0 && accounts[0].toLowerCase() === savedAddress.toLowerCase()) {
+                $connectedWallet.setState({
+                  type: 'evm',
+                  provider: detail.provider,
+                  address: accounts[0]
+                });
+                
+                // Setup listeners
+                if (detail.provider.on) {
+                  detail.provider.on('accountsChanged', (newAccounts: string[]) => {
+                    if (newAccounts && newAccounts.length > 0) {
+                      window.localStorage.setItem('evm_address', newAccounts[0]);
+                      $connectedWallet.setState({
+                        type: 'evm',
+                        provider: detail.provider,
+                        address: newAccounts[0]
+                      });
+                    } else {
+                      window.localStorage.removeItem('wallet_type');
+                      window.localStorage.removeItem('evm_address');
+                      resetConnectedWallet();
+                    }
+                  });
+
+                  detail.provider.on('chainChanged', () => {
+                    window.location.reload();
+                  });
+                }
+                
+                setLoading(false);
+                return;
+              }
+            } catch (err) {
+              // Provider doesn't support eth_accounts or not connected
+            }
+          }
+        }
+      }
+      
+      // If EVM restoration failed or not needed, try ZilPay
+      zilPayWallet
+        .zilpay()
+        .then((zp) => {
+          hanldeObserverState(zp);
+          setLoading(false);
+        })
+        .catch((err) => {
+          setLoading(false);
+        });
+    };
+
+    tryRestoreEVMSession();
 
     return () => {
       if (observer) {
@@ -194,6 +398,9 @@ export const ConnectZIlPay: React.FC = function () {
     };
   }, [hanldeObserverState]);
 
+  const isConnected = wallet || (connectedWallet?.type === 'evm' && connectedWallet?.address);
+  const displayAddress = getDisplayAddress();
+
   return (
     <>
       <AccountModal
@@ -201,13 +408,20 @@ export const ConnectZIlPay: React.FC = function () {
         address={wallet}
         onClose={() => setAccountModal(false)}
       />
-      {wallet ? (
+      <WalletSelectorModal
+        show={walletSelectorModal}
+        wallets={availableWallets}
+        loading={discoveringWallets}
+        onSelect={handleWalletSelect}
+        onClose={() => setWalletSelectorModal(false)}
+      />
+      {isConnected && displayAddress ? (
         <button
           className={styles.connect}
           onClick={() => setAccountModal(true)}
         >
           {isLoading ? (
-            trim(wallet.bech32)
+            displayAddress
           ) : (
             <>
               <b>

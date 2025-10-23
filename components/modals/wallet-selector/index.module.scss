@@ -1,0 +1,148 @@
+@import "@/styles/mixins";
+
+.walletList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.walletItem {
+  @include flex-between-row;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--background-color);
+
+  &:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+    .walletInfo h4 {
+      color: var(--button-color);
+    }
+
+    .walletInfo p {
+      color: var(--button-color);
+      opacity: 0.8;
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.walletContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.walletIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: contain;
+  background: var(--modal-color);
+  padding: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.walletInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color);
+    transition: color 0.2s ease;
+  }
+
+  p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted-color);
+    transition: color 0.2s ease, opacity 0.2s ease;
+  }
+}
+
+.legacyBadge {
+  padding: 4px 8px;
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.evmBadge {
+  padding: 4px 8px;
+  background: rgba(99, 102, 241, 0.2);
+  color: #6366f1;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.emptyState {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--muted-color);
+
+  h4 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    color: var(--text-color);
+  }
+
+  p {
+    margin: 0 0 20px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  a {
+    color: var(--primary-color);
+    text-decoration: underline;
+    
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+}
+
+.loading {
+  padding: 40px 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+
+  p {
+    margin: 0;
+    color: var(--muted-color);
+  }
+}
+
+@media (max-width: 700px) {
+  .walletList {
+    max-height: calc(100vh - 120px);
+  }
+}
+

@@ -35,8 +35,8 @@
 }
 
 .widgetWrap {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--card-color);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 12px;
 }
@@ -45,23 +45,18 @@
   position: sticky;
   top: 16px;
   height: fit-content;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--card-color);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 16px 18px;
-
-  /* локальные токены с фолбэками под тёмную тему ZilPay */
-  --fee-text: var(--text-primary, #e7e9ee);
-  --fee-muted: var(--text-secondary, #b6bac3);
-  --fee-strong: var(--text-strong, #ffffff);
-  color: var(--fee-text);
+  color: var(--text-color);
 }
 
 .feeTitle {
   margin: 0 0 12px;
   font-weight: 700;
   font-size: 16px;
-  color: var(--fee-strong);
+  color: var(--text-color);
 }
 
 .feeDef {
@@ -78,7 +73,7 @@
 
 .row dt {
   font-weight: 700;
-  color: var(--fee-strong);
+  color: var(--text-color);
 }
 
 .row dd {
@@ -87,24 +82,28 @@
 
 .copy {
   margin: 0 0 4px;
-  color: var(--fee-text);
+  color: var(--text-color);
   line-height: 1.55;
+  font-size: 14px;
 }
 
 .copyMuted {
   margin: 0;
-  color: var(--fee-muted);
+  color: var(--muted-color);
   line-height: 1.55;
+  font-size: 14px;
 }
 
 .row dd strong {
-  color: var(--fee-strong);
+  color: var(--text-color);
+  font-weight: 600;
 }
 
 .small {
-  color: var(--fee-muted);
+  color: var(--muted-color);
   font-size: 12px;
   margin-top: 10px;
+  margin-bottom: 0;
 }
 
 .yourFee {
@@ -113,20 +112,21 @@
   justify-content: space-between;
   margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid var(--border-color);
 }
 
 .yourFeeTitle {
-  font-size: 13px;
-  color: var(--fee-muted, #b6bac3);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
 }
 
 .badge {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
-  padding: 4px 10px;
+  padding: 6px 12px;
   line-height: 1;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.12);
-  color: var(--fee-strong, #ffffff);
+  border-radius: 8px;
+  background: var(--primary-color);
+  color: var(--button-color);
 }

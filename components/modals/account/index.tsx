@@ -10,10 +10,11 @@ import { $transactions, resetTransactions } from "store/transactions";
 import { AccountCard } from "@/components/account-card";
 
 import type { Wallet } from "@/types/wallet";
-import { $wallet } from "@/store/wallet";
+import { $wallet, resetWallet } from "@/store/wallet";
 import { Toggle } from "@/components/toggle";
 import { $settings, updateSettingsStore } from "@/store/settings";
 import { Themes } from "@/config/themes";
+import { $connectedWallet, resetConnectedWallet } from "@/store/connected-wallet";
 
 type Prop = {
   show: boolean;
@@ -31,6 +32,7 @@ export var AccountModal: React.FC<Prop> = function ({
   const { transactions } = useStore($transactions);
   const wallet = useStore($wallet);
   const settings = useStore($settings);
+  const connectedWallet = useStore($connectedWallet);
 
   const hanldeChangeTheme = React.useCallback((value: boolean) => {
     if (value) {
@@ -45,6 +47,28 @@ export var AccountModal: React.FC<Prop> = function ({
       });
     }
   }, [settings]);
+
+  const handleDisconnect = React.useCallback(() => {
+    // Clear localStorage and set disconnected flag
+    window.localStorage.removeItem('wallet_type');
+    window.localStorage.removeItem('evm_address');
+    window.localStorage.setItem('wallet_disconnected', 'true');
+    
+    // Reset stores
+    resetConnectedWallet();
+    
+    if (wallet) {
+      resetTransactions(String(wallet?.bech32));
+      resetWallet();
+    }
+    
+    onClose();
+    
+    // Reload page to fully disconnect and stop all observers
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
+  }, [connectedWallet, wallet, onClose]);
 
   return (
     <Modal
@@ -87,6 +111,12 @@ export var AccountModal: React.FC<Prop> = function ({
             ))}
           </div>
         )}
+        <button
+          className={styles.disconnect}
+          onClick={handleDisconnect}
+        >
+          Disconnect Wallet
+        </button>
       </div>
     </Modal>
   );
