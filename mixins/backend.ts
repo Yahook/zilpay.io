@@ -9,7 +9,8 @@ export enum BackendMethods {
 export class ZilPayBackend {
   // private _host = 'https://api.zilpay.io';
   // private _host = 'http://127.0.0.1:3000';
-  private _host = 'https://api.zilpay.io';
+  private _host = typeof window !== 'undefined' ?
+    'https://api.zilpay.io' : `http://127.0.0.1:4000`;
   private _api = `api/v1`;
 
   public async getListedTokens(): Promise<ListedTokenResponse> {
