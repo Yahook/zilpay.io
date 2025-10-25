@@ -53,12 +53,15 @@ export var AccountModal: React.FC<Prop> = function ({
     window.localStorage.removeItem('evm_address');
     window.localStorage.setItem('wallet_disconnected', 'true');
     
-    resetConnectedWallet();
-    
-    if (wallet) {
+    // Очищаем транзакции в зависимости от типа кошелька
+    if (connectedWallet?.type === 'evm' && connectedWallet.address) {
+      resetTransactions(connectedWallet.address);
+    } else if (wallet) {
       resetTransactions(String(wallet?.bech32));
-      resetWallet();
     }
+    
+    resetConnectedWallet();
+    resetWallet();
     
     onClose();
     
@@ -96,7 +99,13 @@ export var AccountModal: React.FC<Prop> = function ({
               </p>
               <p
                 className={styles.clear}
-                onClick={() => resetTransactions(String(wallet?.bech32))}
+                onClick={() => {
+                  if (connectedWallet?.type === 'evm' && connectedWallet.address) {
+                    resetTransactions(connectedWallet.address);
+                  } else if (wallet) {
+                    resetTransactions(String(wallet?.bech32));
+                  }
+                }}
               >
                 (
                 {common.t(`clear_all`)}

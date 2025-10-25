@@ -23,7 +23,9 @@ export function addTransactions(payload: Tx) {
     transactions: newState
   });
 
-  window.localStorage.setItem(payload.from, JSON.stringify($transactions.state));
+  // Сохраняем транзакции под ключом адреса отправителя
+  const storageKey = payload.from.startsWith('0x') ? payload.from.toLowerCase() : payload.from;
+  window.localStorage.setItem(storageKey, JSON.stringify($transactions.state));
 }
 
 export function updateTransactions(from: string, transactions: Tx[]) {
@@ -31,10 +33,14 @@ export function updateTransactions(from: string, transactions: Tx[]) {
     transactions
   });
 
-  window.localStorage.setItem(from, JSON.stringify($transactions.state));
+  // Используем lowercase для EVM адресов
+  const storageKey = from.startsWith('0x') ? from.toLowerCase() : from;
+  window.localStorage.setItem(storageKey, JSON.stringify($transactions.state));
 }
 
 export function resetTransactions(from: string) {
-  window.localStorage.removeItem(from);
+  // Используем lowercase для EVM адресов
+  const storageKey = from.startsWith('0x') ? from.toLowerCase() : from;
+  window.localStorage.removeItem(storageKey);
   $transactions.resetState();
 }

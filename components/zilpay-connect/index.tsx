@@ -77,7 +77,13 @@ export const ConnectZIlPay: React.FC = function () {
       }
     }
 
-    updateTransactions(String($wallet.state?.bech32), transactions);
+    // Сохраняем транзакции в зависимости от типа подключенного кошелька
+    const currentWallet = $connectedWallet.state;
+    const addressKey = (currentWallet?.type === 'evm' && currentWallet.address) 
+      ? currentWallet.address 
+      : String($wallet.state?.bech32);
+    
+    updateTransactions(addressKey, transactions);
   };
 
   const hanldeObserverState = React.useCallback(
@@ -112,10 +118,7 @@ export const ConnectZIlPay: React.FC = function () {
 
         $transactions.resetState();
 
-        const cache = window.localStorage.getItem(
-          String(acc.bech32)
-        );
-
+        const cache = window.localStorage.getItem(String(acc.bech32));
         if (cache) {
           $transactions.setState(JSON.parse(cache));
         }
@@ -135,12 +138,23 @@ export const ConnectZIlPay: React.FC = function () {
         $wallet.setState(zp.wallet.defaultAccount);
       }
 
-      const cache = window.localStorage.getItem(
-        String(zp.wallet.defaultAccount?.bech32),
+      // Пробуем загрузить транзакции из разных возможных ключей
+      const bech32Cache = window.localStorage.getItem(
+        String(zp.wallet.defaultAccount?.bech32)
+      );
+      const base16Cache = window.localStorage.getItem(
+        String(zp.wallet.defaultAccount?.base16)
+      );
+      const base16LowerCache = window.localStorage.getItem(
+        String(zp.wallet.defaultAccount?.base16).toLowerCase()
       );
 
-      if (cache) {
-        $transactions.setState(JSON.parse(cache));
+      if (bech32Cache) {
+        $transactions.setState(JSON.parse(bech32Cache));
+      } else if (base16Cache) {
+        $transactions.setState(JSON.parse(base16Cache));
+      } else if (base16LowerCache) {
+        $transactions.setState(JSON.parse(base16LowerCache));
       }
 
       transactionsCheck();
@@ -170,7 +184,7 @@ export const ConnectZIlPay: React.FC = function () {
       });
 
       const cache = window.localStorage.getItem(
-        String(zp.wallet.defaultAccount?.base16),
+        String(zp.wallet.defaultAccount?.bech32),
       );
 
       if (cache) {
@@ -201,6 +215,16 @@ export const ConnectZIlPay: React.FC = function () {
         window.localStorage.setItem('evm_address', address);
         window.localStorage.removeItem('wallet_disconnected');
 
+        // Загружаем транзакции из localStorage для EVM адреса
+        const cache = window.localStorage.getItem(address.toLowerCase());
+        if (cache) {
+          try {
+            $transactions.setState(JSON.parse(cache));
+          } catch (err) {
+            console.warn('Failed to parse transactions cache:', err);
+          }
+        }
+
         if (detail.provider.on) {
           detail.provider.on('accountsChanged', (newAccounts: string[]) => {
             if (newAccounts && newAccounts.length > 0) {
@@ -210,6 +234,17 @@ export const ConnectZIlPay: React.FC = function () {
                 provider: detail.provider,
                 address: newAccounts[0]
               });
+              
+              // Загружаем транзакции для нового аккаунта
+              $transactions.resetState();
+              const newCache = window.localStorage.getItem(newAccounts[0].toLowerCase());
+              if (newCache) {
+                try {
+                  $transactions.setState(JSON.parse(newCache));
+                } catch (err) {
+                  console.warn('Failed to parse transactions cache:', err);
+                }
+              }
             } else {
               window.localStorage.removeItem('wallet_type');
               window.localStorage.removeItem('evm_address');
@@ -327,6 +362,16 @@ export const ConnectZIlPay: React.FC = function () {
                   address: accounts[0]
                 });
                 
+                // Загружаем транзакции из localStorage для EVM адреса
+                const cache = window.localStorage.getItem(accounts[0].toLowerCase());
+                if (cache) {
+                  try {
+                    $transactions.setState(JSON.parse(cache));
+                  } catch (err) {
+                    console.warn('Failed to parse transactions cache:', err);
+                  }
+                }
+                
                 if (detail.provider.on) {
                   detail.provider.on('accountsChanged', (newAccounts: string[]) => {
                     if (newAccounts && newAccounts.length > 0) {
@@ -336,6 +381,17 @@ export const ConnectZIlPay: React.FC = function () {
                         provider: detail.provider,
                         address: newAccounts[0]
                       });
+                      
+                      // Загружаем транзакции для нового аккаунта
+                      $transactions.resetState();
+                      const newCache = window.localStorage.getItem(newAccounts[0].toLowerCase());
+                      if (newCache) {
+                        try {
+                          $transactions.setState(JSON.parse(newCache));
+                        } catch (err) {
+                          console.warn('Failed to parse transactions cache:', err);
+                        }
+                      }
                     } else {
                       window.localStorage.removeItem('wallet_type');
                       window.localStorage.removeItem('evm_address');
