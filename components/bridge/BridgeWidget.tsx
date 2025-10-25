@@ -1,4 +1,3 @@
-// components/bridge/BridgeWidget.tsx
 import { useEffect, useRef, useCallback } from 'react';
 import { useStore } from 'react-stores';
 import {
@@ -59,14 +58,11 @@ export type BridgeWidgetProps = {
   onAffiliateFeeChange?: (percent: number) => void;
 };
 
-// Helper to convert Zilliqa base16 to EVM format
 function zilToEvmAddress(base16?: string): `0x${string}` | null {
   if (!base16) return null;
-  // If already has 0x prefix
   if (base16.toLowerCase().startsWith('0x')) {
     return base16 as `0x${string}`;
   }
-  // Add 0x prefix
   return `0x${base16}` as `0x${string}`;
 }
 
@@ -77,9 +73,7 @@ export function BridgeWidget({ className, onAffiliateFeeChange }: BridgeWidgetPr
   const initializedRef = useRef(false);
   const lastAddressRef = useRef<string | null>(null);
 
-  // Get current user address
   const getUserAddress = useCallback((): `0x${string}` | null => {
-    // Priority: EVM wallet > ZilPay wallet
     if (connectedWallet?.type === 'evm' && connectedWallet.address) {
       return connectedWallet.address as `0x${string}`;
     }
@@ -92,7 +86,6 @@ export function BridgeWidget({ className, onAffiliateFeeChange }: BridgeWidgetPr
   const checkAndSetFee = useCallback(async (widget: DeBridgeWidget, userAddress: `0x${string}` | null, resetToDefault = false) => {
     let finalPercent = AFFILIATE_DEFAULT_PERCENT;
 
-    // If explicitly resetting to default (e.g., wallet switched)
     if (resetToDefault && !userAddress) {
       widget.setAffiliateFee({
         evm: {
@@ -120,7 +113,6 @@ export function BridgeWidget({ className, onAffiliateFeeChange }: BridgeWidgetPr
           });
           console.debug(`[BridgeWidget] eligible (≈ ${total.toFixed(2)} ZIL) → set 0%`);
         } else {
-          // Not eligible, reset to default explicitly
           widget.setAffiliateFee({
             evm: {
               affiliateFeePercent: String(AFFILIATE_DEFAULT_PERCENT),
@@ -131,7 +123,6 @@ export function BridgeWidget({ className, onAffiliateFeeChange }: BridgeWidgetPr
         }
       } catch (err) {
         console.warn('[BridgeWidget] eligibility check failed:', err);
-        // On error, set default explicitly
         widget.setAffiliateFee({
           evm: {
             affiliateFeePercent: String(AFFILIATE_DEFAULT_PERCENT),
@@ -143,7 +134,6 @@ export function BridgeWidget({ className, onAffiliateFeeChange }: BridgeWidgetPr
       console.debug('[BridgeWidget] no wallet connected → default', AFFILIATE_DEFAULT_PERCENT);
     }
 
-    // Notify parent component
     onAffiliateFeeChange?.(finalPercent);
   }, [onAffiliateFeeChange]);
 
@@ -184,7 +174,6 @@ export function BridgeWidget({ className, onAffiliateFeeChange }: BridgeWidgetPr
       const params: Record<string, unknown> = { ...WIDGET_DEFAULTS };
       if (REFERRAL_CODE) params.r = String(REFERRAL_CODE);
 
-      // Set affiliate fee in initial params (required for it to work)
       params.affiliateFeePercent = AFFILIATE_DEFAULT_PERCENT;
       params.affiliateFeeRecipient = AFFILIATE_EVM_RECIPIENT;
 
@@ -199,7 +188,6 @@ export function BridgeWidget({ className, onAffiliateFeeChange }: BridgeWidgetPr
       window.__ZP_DEBRIDGE_INIT__ = true;
       initializedRef.current = true;
 
-      // Check fee based on current wallet and update if needed
       lastAddressRef.current = userAddress;
       await checkAndSetFee(widget, userAddress, false);
 
@@ -215,27 +203,22 @@ export function BridgeWidget({ className, onAffiliateFeeChange }: BridgeWidgetPr
     };
   }, [getUserAddress, checkAndSetFee]);
 
-  // Watch for wallet changes and update fee (or reload widget on disconnect)
   useEffect(() => {
     const currentAddress = getUserAddress();
     
-    // Only update if address actually changed
     if (currentAddress !== lastAddressRef.current && initializedRef.current) {
       const wasConnected = lastAddressRef.current !== null;
       const isConnected = currentAddress !== null;
       
       console.debug('[BridgeWidget] wallet changed:', lastAddressRef.current, '→', currentAddress);
       
-      // If wallet was disconnected, reload the widget (will be handled by page reload from AccountModal)
       if (wasConnected && !isConnected) {
         console.debug('[BridgeWidget] wallet disconnected, page reload will reinit widget');
         lastAddressRef.current = null;
-        // Reset to default before page reload (just in case)
         if (widgetRef.current) {
           checkAndSetFee(widgetRef.current, null, true);
         }
       } else if (widgetRef.current) {
-        // Just update fee for connected wallet changes
         lastAddressRef.current = currentAddress;
         checkAndSetFee(widgetRef.current, currentAddress, false);
       }

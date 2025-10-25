@@ -74,7 +74,6 @@ export const ConnectZIlPay: React.FC = function () {
         transactions[index].confirmed = true;
         transactions[index].error = !found.result.receipt.success;
       } catch {
-        //
       }
     }
 
@@ -161,7 +160,6 @@ export const ConnectZIlPay: React.FC = function () {
           address: zp.wallet.defaultAccount.base16
         });
         
-        // Save wallet type to localStorage and clear disconnected flag
         window.localStorage.setItem('wallet_type', 'zilpay');
         window.localStorage.removeItem('evm_address');
         window.localStorage.removeItem('wallet_disconnected');
@@ -199,12 +197,10 @@ export const ConnectZIlPay: React.FC = function () {
           address: address
         });
         
-        // Save to localStorage and clear disconnected flag
         window.localStorage.setItem('wallet_type', 'evm');
         window.localStorage.setItem('evm_address', address);
         window.localStorage.removeItem('wallet_disconnected');
 
-        // Listen to account changes
         if (detail.provider.on) {
           detail.provider.on('accountsChanged', (newAccounts: string[]) => {
             if (newAccounts && newAccounts.length > 0) {
@@ -215,7 +211,6 @@ export const ConnectZIlPay: React.FC = function () {
                 address: newAccounts[0]
               });
             } else {
-              // Disconnected
               window.localStorage.removeItem('wallet_type');
               window.localStorage.removeItem('evm_address');
               resetConnectedWallet();
@@ -223,7 +218,6 @@ export const ConnectZIlPay: React.FC = function () {
           });
 
           detail.provider.on('chainChanged', () => {
-            // Reload to handle chain change
             window.location.reload();
           });
         }
@@ -238,7 +232,6 @@ export const ConnectZIlPay: React.FC = function () {
     setDiscoveringWallets(true);
     const wallets: WalletOption[] = [];
 
-    // Check for ZilPay
     try {
       const zp = await zilPayWallet.zilpay();
       if (zp) {
@@ -250,10 +243,8 @@ export const ConnectZIlPay: React.FC = function () {
         });
       }
     } catch (err) {
-      // ZilPay not available
     }
 
-    // Discover EIP-6963 providers
     try {
       const evmProviders = await discoverProvidersOnce(500);
       evmProviders.forEach((detail) => {
@@ -307,11 +298,9 @@ export const ConnectZIlPay: React.FC = function () {
   };
 
   React.useEffect(() => {
-    // Try to restore EVM wallet session from localStorage
     const tryRestoreEVMSession = async () => {
       const isDisconnected = window.localStorage.getItem('wallet_disconnected');
       
-      // If user manually disconnected, don't auto-restore
       if (isDisconnected === 'true') {
         setLoading(false);
         return;
@@ -325,7 +314,6 @@ export const ConnectZIlPay: React.FC = function () {
           setLoading(true);
           const evmProviders = await discoverProvidersOnce(500);
           
-          // Try to find the previously connected provider
           for (const detail of evmProviders) {
             try {
               const accounts = await detail.provider.request({
@@ -339,7 +327,6 @@ export const ConnectZIlPay: React.FC = function () {
                   address: accounts[0]
                 });
                 
-                // Setup listeners
                 if (detail.provider.on) {
                   detail.provider.on('accountsChanged', (newAccounts: string[]) => {
                     if (newAccounts && newAccounts.length > 0) {
@@ -365,13 +352,11 @@ export const ConnectZIlPay: React.FC = function () {
                 return;
               }
             } catch (err) {
-              // Provider doesn't support eth_accounts or not connected
             }
           }
         }
       }
       
-      // If EVM restoration failed or not needed, try ZilPay
       zilPayWallet
         .zilpay()
         .then((zp) => {

@@ -99,14 +99,13 @@
   }
 }
 
-/* START: Добавленные стили для ссылок стейкинга */
 .stakingLinks {
   display: flex;
   justify-content: center;
-  gap: 1.5rem; /* Расстояние между ссылками */
+  gap: 1.5rem;
   width: 100%;
-  margin-block: 0.8rem; /* Вертикальные отступы */
-  flex-wrap: wrap; /* Позволяет переносить ссылки на новую строку на малых экранах */
+  margin-block: 0.8rem;
+  flex-wrap: wrap;
 
   a {
     color: yellow;
@@ -121,4 +120,3 @@
     }
   }
 }
-/* END: Добавленные стили */

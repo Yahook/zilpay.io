@@ -49,12 +49,10 @@ export var AccountModal: React.FC<Prop> = function ({
   }, [settings]);
 
   const handleDisconnect = React.useCallback(() => {
-    // Clear localStorage and set disconnected flag
     window.localStorage.removeItem('wallet_type');
     window.localStorage.removeItem('evm_address');
     window.localStorage.setItem('wallet_disconnected', 'true');
     
-    // Reset stores
     resetConnectedWallet();
     
     if (wallet) {
@@ -64,7 +62,6 @@ export var AccountModal: React.FC<Prop> = function ({
     
     onClose();
     
-    // Reload page to fully disconnect and stop all observers
     setTimeout(() => {
       window.location.reload();
     }, 100);

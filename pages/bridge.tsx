@@ -66,7 +66,6 @@ const BridgePage: NextPage<BridgePageProps> = () => {
               </div>
             </dl>
 
-            {/* персональная строка */}
             <div className={s.yourFee}>
               <span className={s.yourFeeTitle}>Your ZilPay fee</span>
               <span className={s.badge}>{formatPercent(feePercent)}</span>
