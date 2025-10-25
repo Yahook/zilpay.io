@@ -1,6 +1,7 @@
 import styles from './index.module.scss';
 
 import React from 'react';
+import Image from 'next/image';
 import { ThreeDots } from 'react-loader-spinner';
 
 import { Modal, ModalHeader } from '@/components/modal/index';
@@ -76,10 +77,12 @@ export const WalletSelectorModal: React.FC<Props> = function ({
               onClick={() => handleSelect(wallet)}
             >
               <div className={styles.walletContent}>
-                <img
+                <Image
                   src={wallet.icon}
                   alt={wallet.name}
                   className={styles.walletIcon}
+                  width={40}
+                  height={40}
                 />
                 <div className={styles.walletInfo}>
                   <h4>{wallet.name}</h4>
